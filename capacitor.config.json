@@ -1,17 +1,4 @@
-{
-  "appId": "com.notas.professional",
-  "appName": "Notas Professional",
-  "webDir": ".",
-  "server": {
-    "androidScheme": "https",
-    "cleartext": true
-  },
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 2000,
-      "backgroundColor": "#2563eb",
-      "showSpinner": false,
-      "androidSplashResourceName": "splash",
+": "splash",
       "iosSplashResourceName": "splash"
     }
   }

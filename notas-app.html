@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrakoNotes - Información Escolar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Mobile optimizations -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Notas">
+    
+    <!-- Viewport for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .note-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .note-card:hover { transform: translateY(-2px); }
+        .note-card:active { transform: scale(0.98); }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .note-card { margin-bottom: 1rem; }
+            .modal-content { margin: 1rem; }
+        }
+        
+        /* Touch feedback */
+        button, .note-card {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        /* Safe area for notched phones */
+        body {
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-dragon text-blue-600 text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-gray-900">DrakoNotes</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="articleCount" class="text-sm text-gray-500">0 artículos</span>
+                    <button onclick="toggleMenu()" class="text-gray-600 hover:text-gray-900 p-2">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <button onclick="toggleSearch()" class="text-gray-600 hover:text-gray-900 p-2">
+                        <i class="fas fa-search text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Search Bar (Hidden by default) -->
+        <div id="searchBar" class="mb-8 hidden">
+            <div class="relative max-w-md">
+                <input type="text" id="searchInput" placeholder="Buscar artículos..." 
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+        </div>
+
+        <!-- Category Navigation -->
+        <div id="categoryMenu" class="mb-6 hidden">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filterCategory('all')" class="category-btn px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Todos</button>
+                <button onclick="filterCategory('academico')" class="category-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">Académico</button>
+                <button onclick="filterCategory('eventos')" class="category-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">Eventos</button>
+                <button onclick="filterCategory('anuncios')" class="category-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">Anuncios</button>
+                <button onclick="filterCategory('recursos')" class="category-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">Recursos</button>
+                <button onclick="filterCategory('reglamentos')" class="category-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">Reglamentos</button>
+            </div>
+        </div>
+
+        <!-- Articles Grid -->
+        <div id="articlesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Articles will be dynamically added here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12">
+            <i class="fas fa-dragon text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No hay artículos disponibles</h3>
+            <p class="text-gray-500">Pronto habrá nueva información escolar</p>
+        </div>
+    </main>
+
+    <!-- Article Detail Modal -->
+    <div id="articleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 id="articleModalTitle" class="text-xl font-semibold text-gray-900"></h2>
+                    <button onclick="closeArticleModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div id="articleModalContent" class="prose max-w-none">
+                    <!-- Article content will be inserted here -->
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between text-sm text-gray-500">
+                        <span id="articleModalDate"></span>
+                        <span id="articleModalCategory" class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DrakoNotes - App de Solo Lectura
+        
+        // Artículos Escolares Predefinidos
+        const articles = [
+            {
+                id: 1,
+                title: "Horarios de Clases - Semestre Otoño 2024",
+                summary: "¡Atención estudiantes! Aquí están los horarios de clases actualizados para el semestre de Otoño 2024. Asegúrense de revisar sus aulas y profesores asignados.",
+                content: `
+                    <h3>¡Atención estudiantes!</h3>
+                    <p>Aquí están los horarios de clases actualizados para el semestre de Otoño 2024. Asegúrense de revisar sus aulas y profesores asignados.</p>
+                    
+                    <h4>Lunes a Viernes:</h4>
+                    <ul>
+                        <li><strong>7:00 - 8:30:</strong> Matemáticas (Salón 201)</li>
+                        <li><strong>8:40 - 10:10:</strong> Español (Salón 103)</li>
+                        <li><strong>10:20 - 11:50:</strong> Historia (Salón 205)</li>
+                        <li><strong>12:00 - 13:30:</strong> Ciencias (Laboratorio 301)</li>
+                        <li><strong>13:40 - 15:10:</strong> Inglés (Salón 102)</li>
+                    </ul>
+                    
+                    <h4>Importante:</h4>
+                    <ul>
+                        <li>Puntualidad requerida</li>
+                        <li>Asistencia mínima 85%</li>
+                        <li>Justificantes médicos en coordinación</li>
+                    </ul>
+                `,
+                category: "academico",
+                date: "2024-10-15",
+                author: "Departamento Académico"
+            },
+            {
+                id: 2,
+                title: "Próximos Eventos Escolares - Octubre 2024",
+                summary: "No te pierdas los eventos más importantes de la preparatoria este mes: Feria de Ciencias, Día Deportivo y Noche de Talentos.",
+                content: `
+                    <h3>No te pierdas los eventos más importantes de la preparatoria este mes:</h3>
+                    
+                    <h4>🎅 Feria de Ciencias: 15 de Octubre</h4>
+                    <ul>
+                        <li><strong>Horario:</strong> 10:00 - 14:00</li>
+                        <li><strong>Lugar:</strong> Auditorio Principal</li>
+                        <li><strong>Participación:</strong> Obligatoria para todos los grupos</li>
+                    </ul>
+                    
+                    <h4>⚽ Día Deportivo: 22 de Octubre</h4>
+                    <ul>
+                        <li>Torneos de fútbol, básquetbol y voleibol</li>
+                        <li>Inscripciones en el departamento de educación física</li>
+                    </ul>
+                    
+                    <h4>🎭 Noche de Talentos: 29 de Octubre</h4>
+                    <ul>
+                        <li><strong>Audiciones:</strong> 15-20 de Octubre</li>
+                        <li><strong>Gran final:</strong> 29 de Octubre, 19:00 hrs</li>
+                    </ul>
+                `,
+                category: "eventos",
+                date: "2024-10-01",
+                author: "Departamento de Actividades Estudiantiles"
+            },
+            {
+                id: 3,
+                title: "Reglamento Escolar 2024-2025",
+                summary: "Normativas importantes para todos los estudiantes: uniforme, disciplina y sanciones. Conoce las reglas que rigen nuestra comunidad escolar.",
+                content: `
+                    <h3>Normativas importantes para todos los estudiantes:</h3>
+                    
+                    <h4>👔 Uniforme:</h4>
+                    <ul>
+                        <li><strong>Lunes, miércoles y viernes:</strong> Formal completo</li>
+                        <li><strong>Martes y jueves:</strong> Deportivo</li>
+                        <li><strong>Sin excepciones</strong> sin justificante médico</li>
+                    </ul>
+                    
+                    <h4>📚 Disciplina:</h4>
+                    <ul>
+                        <li>Respeto a profesores y compañeros</li>
+                        <li>Uso adecuado de instalaciones</li>
+                        <li>Prohibido uso de celulares en clase</li>
+                    </ul>
+                    
+                    <h4>⚖️ Sanciones:</h4>
+                    <ul>
+                        <li><strong>1ª falta:</strong> Amonestación verbal</li>
+                        <li><strong>2ª falta:</strong> Amonestación escrita</li>
+                        <li><strong>3ª falta:</strong> Citación a padres</li>
+                    </ul>
+                `,
+                category: "reglamentos",
+                date: "2024-09-01",
+                author: "Departamento de Disciplina Escolar"
+            },
+            {
+                id: 4,
+                title: "Recursos Académicos Disponibles",
+                summary: "Conoce todos los recursos que ofrece la preparatoria: tutorías, biblioteca, laboratorios y plataforma digital de aprendizaje.",
+                content: `
+                    <h3>Recursos Académicos para tu éxito:</h3>
+                    
+                    <h4>📖 Biblioteca:</h4>
+                    <ul>
+                        <li><strong>Horario:</strong> Lunes a Viernes 7:00 - 18:00</li>
+                        <li>Préstamo de libros y material de estudio</li>
+                        <li>Sala de estudio silenciosa</li>
+                        <li>Acceso a bases de datos digitales</li>
+                    </ul>
+                    
+                    <h4>🔬 Laboratorios:</h4>
+                    <ul>
+                        <li>Laboratorio de Ciencias (301)</li>
+                        <li>Laboratorio de Cómputo (202)</li>
+                        <li>Reservas previas requeridas</li>
+                    </ul>
+                    
+                    <h4>👨‍🏫 Tutorías:</h4>
+                    <ul>
+                        <li>Matemáticas: Lunes y Miércoles 15:30-17:00</li>
+                        <li>Español: Martes y Jueves 15:30-17:00</li>
+                        <li>Inglés: Viernes 15:30-17:00</li>
+                    </ul>
+                `,
+                category: "recursos",
+                date: "2024-09-15",
+                author: "Departamento de Apoyo Académico"
+            },
+            {
+                id: 5,
+                title: "Anuncio Importante - Cambio en Evaluaciones",
+                summary: "Información sobre el nuevo sistema de evaluaciones parciales y fechas importantes para el semestre en curso.",
+                content: `
+                    <h3>📢 Comunicado Oficial</h3>
+                    <p>Por disposición de la dirección académica, se informa a toda la comunidad estudiantil sobre cambios importantes en el sistema de evaluaciones.</p>
+                    
+                    <h4>Nuevo Sistema de Evaluación:</h4>
+                    <ul>
+                        <li><strong>Parciales:</strong> 3 evaluaciones parciales</li>
+                        <li><strong>Ponderación:</strong> 25% cada parcial + 25% trabajo final</li>
+                        <li><strong>Recuperación:</strong> Una sola oportunidad por materia</li>
+                    </ul>
+                    
+                    <h4>Fechas Importantes:</h4>
+                    <ul>
+                        <li><strong>Primer Parcial:</strong> 25-29 de Octubre</li>
+                        <li><strong>Segundo Parcial:</strong> 20-24 de Noviembre</li>
+                        <li><strong>Tercer Parcial:</strong> 15-19 de Diciembre</li>
+                        <li><strong>Finales:</strong> 10-15 de Enero 2025</li>
+                    </ul>
+                    
+                    <p><em>Se recomienda a los estudiantes prepararse con anticipación y consultar con sus profesores cualquier duda.</em></p>
+                `,
+                category: "anuncios",
+                date: "2024-10-05",
+                author: "Dirección Académica"
+            }
+        ];
+
+        // Estado de la App
+        let filteredArticles = [...articles];
+        let currentCategory = 'all';
+
+        // Elementos del DOM
+        const articlesContainer = document.getElementById('articlesContainer');
+        const emptyState = document.getElementById('emptyState');
+        const articleModal = document.getElementById('articleModal');
+        const searchInput = document.getElementById('searchInput');
+        const searchBar = document.getElementById('searchBar');
+        const categoryMenu = document.getElementById('categoryMenu');
+        const articleCount = document.getElementById('articleCount');
+
+        // Colores de Categorías
+        const categoryColors = {
+            academico: 'bg-blue-100 text-blue-800',
+            eventos: 'bg-green-100 text-green-800',
+            anuncios: 'bg-red-100 text-red-800',
+            recursos: 'bg-purple-100 text-purple-800',
+            reglamentos: 'bg-gray-100 text-gray-800'
+        };
+
+        const categoryNames = {
+            academico: 'Académico',
+            eventos: 'Eventos',
+            anuncios: 'Anuncios',
+            recursos: 'Recursos',
+            reglamentos: 'Reglamentos'
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            renderArticles();
+            updateArticleCount();
+        });
+
+        // Event Listeners
+        searchInput.addEventListener('input', handleSearch);
+
+        // Funciones de UI
+        function toggleMenu() {
+            categoryMenu.classList.toggle('hidden');
+            searchBar.classList.add('hidden');
+        }
+
+        function toggleSearch() {
+            searchBar.classList.toggle('hidden');
+            categoryMenu.classList.add('hidden');
+            if (!searchBar.classList.contains('hidden')) {
+                searchInput.focus();
+            }
+        }
+
+        function filterCategory(category) {
+            currentCategory = category;
+            
+            // Actualizar botones de categoría
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('bg-blue-600', 'text-white');
+            
+            // Filtrar artículos
+            if (category === 'all') {
+                filteredArticles = [...articles];
+            } else {
+                filteredArticles = articles.filter(article => article.category === category);
+            }
+            
+            renderArticles();
+        }
+
+        function handleSearch() {
+            const query = searchInput.value.toLowerCase();
+            
+            if (currentCategory === 'all') {
+                filteredArticles = articles.filter(article => 
+                    article.title.toLowerCase().includes(query) || 
+                    article.summary.toLowerCase().includes(query) ||
+                    article.content.toLowerCase().includes(query)
+                );
+            } else {
+                filteredArticles = articles.filter(article => 
+                    article.category === currentCategory &&
+                    (article.title.toLowerCase().includes(query) || 
+                     article.summary.toLowerCase().includes(query) ||
+                     article.content.toLowerCase().includes(query))
+                );
+            }
+            
+            renderArticles();
+        }
+
+        function openArticleModal(articleId) {
+            const article = articles.find(a => a.id === articleId);
+            if (article) {
+                document.getElementById('articleModalTitle').textContent = article.title;
+                document.getElementById('articleModalContent').innerHTML = article.content;
+                document.getElementById('articleModalDate').textContent = new Date(article.date).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                document.getElementById('articleModalCategory').textContent = categoryNames[article.category];
+                document.getElementById('articleModalCategory').className = `px-2 py-1 ${categoryColors[article.category]} rounded-full text-xs font-medium`;
+                
+                articleModal.classList.remove('hidden');
+            }
+        }
+
+        function closeArticleModal() {
+            articleModal.classList.add('hidden');
+        }
+
+        function renderArticles() {
+            if (filteredArticles.length === 0) {
+                articlesContainer.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            articlesContainer.innerHTML = filteredArticles.map(article => `
+                <article class="article-card bg-white rounded-lg shadow-md hover:shadow-lg p-6 cursor-pointer fade-in transition-all duration-300 hover:transform hover:-translate-y-1" onclick="openArticleModal(${article.id})">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="font-bold text-gray-900 text-xl leading-tight flex-1 pr-2">${article.title}</h3>
+                        <span class="px-3 py-1 text-xs font-medium rounded-full ${categoryColors[article.category]} flex-shrink-0">
+                            ${categoryNames[article.category]}
+                        </span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-3">${article.summary}</p>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-400">
+                            <i class="far fa-calendar mr-1"></i>
+                            ${new Date(article.date).toLocaleDateString('es-ES')}
+                        </span>
+                        <span class="text-blue-600 font-medium">
+                            Leer más <i class="fas fa-arrow-right ml-1"></i>
+                        </span>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function updateArticleCount() {
+            articleCount.textContent = `${filteredArticles.length} artículo${filteredArticles.length !== 1 ? 's' : ''}`;
+        }
+
+        // Cerrar modal con Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !articleModal.classList.contains('hidden')) {
+                closeArticleModal();
+            }
+        });
+
+        // Cerrar modal al hacer clic fuera
+        articleModal.addEventListener('click', (e) => {
+            if (e.target === articleModal) {
+                closeArticleModal();
+            }
+        });
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        }
+    </script>
+</body>
+</html>

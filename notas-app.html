@@ -20,7 +20,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Italiana&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        .header-title { font-family: 'Italiana', sans-serif; }
         .note-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .note-card:hover { transform: translateY(-2px); }
         .note-card:active { transform: scale(0.98); }
@@ -52,11 +54,13 @@
     <!-- Header -->
     <header class="bg-gradient-to-r from-black via-gray-900 to-black shadow-lg border-b border-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <i class="fas fa-dragon text-white text-2xl"></i>
-                    <h1 class="text-2xl font-bold text-white">DrakoNotes</h1>
-                </div>
+            <div class="flex items-center justify-between h-24">
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-dragon text-white text-3xl"></i>
+                        <h1 class="text-xl font-bold text-white header-title">DrakoNotes X Universidad Carolina</h1>
+                    </div>
+                                    </div>
                 <div class="flex items-center space-x-4">
                     <span id="articleCount" class="text-sm text-gray-300">0 artículos</span>
                     <button onclick="toggleMenu()" class="text-gray-300 hover:text-white p-2">
